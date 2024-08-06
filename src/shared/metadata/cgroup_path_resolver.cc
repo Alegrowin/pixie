@@ -33,17 +33,24 @@ namespace px {
 namespace md {
 
 StatusOr<std::string> CGroupBasePath(std::string_view sysfs_path) {
-  // Different hosts may mount different cgroup dirs. Try a couple for robustness.
-  const std::vector<std::string> cgroup_dirs = {"cpu,cpuacct", "cpu", "pids"};
 
-  for (const auto& cgroup_dir : cgroup_dirs) {
-    std::filesystem::path dir;
+  if (FLAGS_cgroup_base_path_override != nullptr) {
+    return FLAGS_cgroup_base_path_override;
+  }
 
-    // Attempt assuming naming scheme #1.
-    std::string base_path = absl::StrCat(sysfs_path, "/cgroup/", cgroup_dir);
+  if (FLAGS_force_cgroup2_mode == false) {
+    // Different hosts may mount different cgroup dirs. Try a couple for robustness.
+    const std::vector<std::string> cgroup_dirs = {"cpu,cpuacct", "cpu", "pids"};
 
-    if (fs::Exists(base_path)) {
-      return base_path;
+    for (const auto& cgroup_dir : cgroup_dirs) {
+      std::filesystem::path dir;
+
+      // Attempt assuming naming scheme #1.
+      std::string base_path = absl::StrCat(sysfs_path, "/cgroup/", cgroup_dir);
+
+      if (fs::Exists(base_path)) {
+        return base_path;
+      }
     }
   }
 
